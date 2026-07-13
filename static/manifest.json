@@ -1,0 +1,17 @@
+{
+  "name": "Leitor Akita",
+  "short_name": "AkitaReader",
+  "description": "Rastreador e Leitor de Blog Posts do Akita on Rails",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/icons/icon.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512"
+    }
+  ]
+}

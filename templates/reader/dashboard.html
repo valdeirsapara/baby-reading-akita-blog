@@ -1,0 +1,338 @@
+{% extends 'default.html' %}
+{% load static %}
+
+{% block title %}Dashboard |{% endblock %}
+
+{% block content %}
+<!-- Top Header -->
+<header class="border-b border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-neutral100/90 dark:bg-akita-darkNeutral900/90 backdrop-blur sticky top-0 z-50 transition-colors duration-200">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-gradient-to-tr from-akita-accent to-akita-accentStrong dark:from-akita-darkAccent dark:to-akita-darkAccentStrong rounded-xl shadow-md">
+                <i data-lucide="book-open" class="h-6 w-6 text-akita-bg dark:text-akita-darkBg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold font-sans text-akita-text dark:text-akita-darkText">
+                    Leitor <span class="hx:mr-2 hx:font-extrabold hx:inline hx:select-none" title="AkitaOnRails.com">AkitaOnRails.com</span>
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-sans">Seu rastreador de leitura pessoal</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <!-- Subtle background sync indicator -->
+            <span v-if="syncing" class="flex items-center space-x-1.5 text-xs text-slate-500 dark:text-slate-400 font-sans" title="Buscando novos posts no feed do Akita...">
+                <i data-lucide="refresh-cw" class="h-3.5 w-3.5 animate-spin text-akita-accent dark:text-akita-darkAccent"></i>
+                <span class="hidden sm:inline">Sincronizando...</span>
+            </span>
+
+            <!-- Theme Toggle Button -->
+            <button 
+                onclick="toggleTheme()" 
+                class="p-2 rounded-lg border border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-bg/50 dark:bg-akita-darkBg/50 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-akita-text dark:text-akita-darkText transition duration-150"
+                title="Alternar Tema"
+            >
+                <i data-lucide="sun" class="h-4 w-4 block dark:hidden"></i>
+                <i data-lucide="moon" class="h-4 w-4 hidden dark:block"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 font-sans">
+    <!-- Stats Section -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+        <div class="bg-akita-neutral100/50 dark:bg-akita-darkNeutral900/50 border border-akita-neutral200/60 dark:border-akita-darkNeutral800/60 rounded-xl p-4 flex items-center space-x-4 transition-colors duration-200">
+            <div class="p-3 bg-akita-accent/10 dark:bg-akita-darkAccent/10 rounded-lg text-akita-accent dark:text-akita-darkAccent">
+                <i data-lucide="hourglass" class="h-6 w-6"></i>
+            </div>
+            <div>
+                <div class="text-2xl font-bold font-sans text-akita-text dark:text-akita-darkText">[[ stats.reading ]]</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Lendo</div>
+            </div>
+        </div>
+        <div class="bg-akita-neutral100/50 dark:bg-akita-darkNeutral900/50 border border-akita-neutral200/60 dark:border-akita-darkNeutral800/60 rounded-xl p-4 flex items-center space-x-4 transition-colors duration-200">
+            <div class="p-3 bg-emerald-500/10 dark:bg-emerald-500/10 rounded-lg text-emerald-600 dark:text-emerald-400">
+                <i data-lucide="check-circle" class="h-6 w-6"></i>
+            </div>
+            <div>
+                <div class="text-2xl font-bold font-sans text-akita-text dark:text-akita-darkText">[[ stats.read ]]</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Lidos</div>
+            </div>
+        </div>
+        <div class="bg-akita-neutral100/50 dark:bg-akita-darkNeutral900/50 border border-akita-neutral200/60 dark:border-akita-darkNeutral800/60 rounded-xl p-4 flex items-center space-x-4 transition-colors duration-200">
+            <div class="p-3 bg-slate-500/10 rounded-lg text-slate-500 dark:text-slate-400">
+                <i data-lucide="book" class="h-6 w-6"></i>
+            </div>
+            <div>
+                <div class="text-2xl font-bold font-sans text-akita-text dark:text-akita-darkText">[[ stats.unread ]]</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Não lidos</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Search -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <!-- Tabs -->
+        <div class="flex space-x-1 p-1 bg-akita-neutral100/80 dark:bg-akita-darkNeutral900/85 rounded-xl border border-akita-neutral200/80 dark:border-akita-darkNeutral800/80 self-start">
+            <button 
+                @click="currentTab = 'queue'"
+                :class="currentTab === 'queue' ? 'bg-akita-accent text-white dark:bg-akita-darkAccent dark:text-akita-darkBg shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText'"
+                class="px-4 py-2 text-sm font-semibold rounded-lg transition duration-200"
+            >
+                Fila de Leitura
+            </button>
+            <button 
+                @click="currentTab = 'read'"
+                :class="currentTab === 'read' ? 'bg-akita-accent text-white dark:bg-akita-darkAccent dark:text-akita-darkBg shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText'"
+                class="px-4 py-2 text-sm font-semibold rounded-lg transition duration-200"
+            >
+                Lidos
+            </button>
+            <button 
+                @click="currentTab = 'all'"
+                :class="currentTab === 'all' ? 'bg-akita-accent text-white dark:bg-akita-darkAccent dark:text-akita-darkBg shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText'"
+                class="px-4 py-2 text-sm font-semibold rounded-lg transition duration-200"
+            >
+                Todos
+            </button>
+            <button 
+                @click="currentTab = 'videos'"
+                :class="currentTab === 'videos' ? 'bg-akita-accent text-white dark:bg-akita-darkAccent dark:text-akita-darkBg shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText'"
+                class="px-4 py-2 text-sm font-semibold rounded-lg transition duration-200 flex items-center space-x-1.5"
+            >
+                <i data-lucide="video" class="h-3.5 w-3.5"></i>
+                <span>Vídeos</span>
+            </button>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="relative flex-grow md:max-w-md">
+            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400"></i>
+            <input 
+                v-model="searchQuery"
+                type="text" 
+                placeholder="Pesquisar posts por título..."
+                class="w-full bg-akita-neutral100/40 dark:bg-akita-darkNeutral900/40 border border-akita-neutral200/80 dark:border-akita-darkNeutral800/80 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-akita-accent dark:focus:border-akita-darkAccent transition duration-200 text-akita-text dark:text-akita-darkText placeholder:text-slate-400 dark:placeholder:text-slate-500"
+            >
+            <button 
+                v-if="searchQuery" 
+                @click="searchQuery = ''"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-450 hover:text-slate-300"
+            >
+                <i data-lucide="x" class="h-4 w-4"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Content Section -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-16">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-akita-accent dark:border-akita-darkAccent mb-4"></div>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Carregando conteúdo...</p>
+    </div>
+
+    <div v-else>
+        <!-- Videos Tab Content -->
+        <div v-if="currentTab === 'videos'" class="space-y-6">
+            <div v-if="filteredVideos.length === 0" class="bg-akita-neutral100/20 dark:bg-akita-darkNeutral900/20 border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-2xl p-12 text-center">
+                <div class="inline-flex p-4 bg-akita-neutral100/50 dark:bg-akita-darkNeutral900/50 rounded-full text-slate-400 mb-4">
+                    <i data-lucide="video-off" class="h-10 w-10"></i>
+                </div>
+                <h3 class="text-lg font-bold text-akita-text dark:text-akita-darkText mb-1">Nenhum vídeo encontrado</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+                    [[ searchQuery ? 'Nenhum resultado corresponde à sua pesquisa.' : 'Parece que não há vídeos indexados nos posts salvos no leitor.' ]]
+                </p>
+            </div>
+            
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <div 
+                    v-for="video in filteredVideos" 
+                    :key="video.id" 
+                    class="group flex flex-col bg-akita-neutral100/30 dark:bg-akita-darkNeutral900/30 border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-xl overflow-hidden hover:shadow-lg dark:hover:shadow-black/30 hover:border-akita-accent/30 dark:hover:border-akita-darkAccent/30 transition-all duration-300 transform hover:-translate-y-1"
+                >
+                    <!-- Thumbnail with Play Button Overlay -->
+                    <div class="relative aspect-video w-full overflow-hidden bg-black cursor-pointer" @click="openVideo(video.youtube_id, video.title)">
+                        <img 
+                            :src="video.thumbnail_url" 
+                            :alt="video.title" 
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
+                        >
+                        <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity duration-200">
+                            <div class="p-3 bg-white/90 dark:bg-akita-darkNeutral900/90 rounded-full text-akita-accent dark:text-akita-darkAccent shadow-md transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                                <i data-lucide="play" class="h-6 w-6 fill-current"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Video details -->
+                    <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
+                        <div class="space-y-1">
+                            <h3 
+                                @click="openVideo(video.youtube_id, video.title)"
+                                class="text-sm font-bold leading-snug text-akita-text dark:text-akita-darkText hover:text-akita-accent dark:hover:text-akita-darkAccent cursor-pointer transition-colors duration-150 line-clamp-2"
+                            >
+                                [[ video.title ]]
+                            </h3>
+                        </div>
+                        
+                        <div class="border-t border-akita-neutral200/40 dark:border-akita-darkNeutral800/45 pt-2.5 flex flex-col space-y-1 text-[11px] text-slate-500 dark:text-slate-400 font-sans">
+                            <span class="font-semibold truncate">Mencionado em:</span>
+                            <a 
+                                :href="video.post_url" 
+                                class="hover:underline text-akita-accent dark:text-akita-darkAccent font-bold truncate inline-flex items-center space-x-1"
+                            >
+                                <span>[[ video.post_title ]]</span>
+                                <i data-lucide="arrow-up-right" class="h-3 w-3"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Posts Content -->
+        <div v-else>
+            <div v-if="filteredPosts.length === 0" class="bg-akita-neutral100/20 dark:bg-akita-darkNeutral900/20 border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-2xl p-12 text-center">
+                <div class="inline-flex p-4 bg-akita-neutral100/50 dark:bg-akita-darkNeutral900/50 rounded-full text-slate-400 mb-4">
+                    <i data-lucide="inbox" class="h-10 w-10"></i>
+                </div>
+                <h3 class="text-lg font-bold text-akita-text dark:text-akita-darkText mb-1">Nenhum post encontrado</h3>
+                <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
+                    [[ searchQuery ? 'Nenhum resultado corresponde à sua pesquisa.' : 'Parece que você ainda não sincronizou o feed ou a fila de leitura está vazia!' ]]
+                </p>
+                <button 
+                    v-if="!searchQuery"
+                    @click="syncFeed" 
+                    class="px-5 py-2.5 rounded-lg bg-akita-accent hover:bg-akita-accentStrong dark:bg-akita-darkAccent dark:hover:bg-akita-darkAccentStrong text-white dark:text-akita-darkBg text-sm font-semibold transition duration-200 shadow-sm inline-flex items-center space-x-2"
+                >
+                    <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                    <span>Sincronizar agora</span>
+                </button>
+            </div>
+
+            <!-- Posts Grouped chronologically by Year - Month -->
+            <div v-else class="space-y-8">
+                <div v-for="group in groupedPosts" :key="group.key" class="space-y-4">
+                    <!-- Month-Year Group Heading -->
+                    <h2 class="text-xl font-extrabold text-akita-accent dark:text-akita-darkAccent border-b border-akita-neutral200 dark:border-akita-darkNeutral800 pb-1.5 flex items-center justify-between">
+                        <span>[[ group.key ]]</span>
+                        <span class="text-xs font-medium text-slate-400 dark:text-slate-500">[[ group.posts.length ]] [[ group.posts.length === 1 ? 'post' : 'posts' ]]</span>
+                    </h2>
+                    
+                    <!-- Group's Posts List -->
+                    <div class="space-y-3">
+                        <div 
+                            v-for="post in group.posts" 
+                            :key="post.id"
+                            class="group border rounded-xl p-4 transition duration-150 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                            :class="post.status === 'reading' 
+                                ? 'border-amber-500/50 dark:border-akita-darkAccent/50 bg-amber-500/[0.04] dark:bg-akita-darkAccentSoft/10 shadow-sm shadow-amber-500/5 dark:shadow-akita-darkAccent/5' 
+                                : 'bg-akita-neutral100/30 dark:bg-akita-darkNeutral900/30 hover:bg-akita-neutral100/60 dark:hover:bg-akita-darkNeutral850/60 border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 hover:border-akita-neutral200 dark:hover:border-akita-darkNeutral800'"
+                        >
+                            <!-- Post content left -->
+                            <div class="flex-grow space-y-1">
+                                <div class="flex items-center space-x-2">
+                                    <!-- Day indicator badge -->
+                                    <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-akita-neutral200/60 dark:bg-akita-darkNeutral800/60 px-2 py-0.5 rounded">
+                                        [[ formatDateDay(post.published_at) ]]
+                                    </span>
+                                    
+                                    <!-- Progress badges -->
+                                    <span 
+                                        v-if="post.status === 'read'" 
+                                        class="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded font-bold flex items-center"
+                                    >
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 mr-1"></span>
+                                        Lido
+                                    </span>
+                                    <span 
+                                        v-else-if="post.status === 'reading'" 
+                                        class="text-[10px] text-amber-600 dark:text-akita-darkAccent bg-amber-500/10 dark:bg-akita-darkAccentSoft px-2 py-0.5 rounded font-bold flex items-center"
+                                    >
+                                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-akita-darkAccent mr-1 animate-pulse"></span>
+                                        Lendo ([[ Math.round(post.scroll_position) ]]%)
+                                    </span>
+                                </div>
+                                
+                                <!-- Post Title link -->
+                                <a :href="post.local_url" class="block">
+                                    <h3 class="text-base font-bold font-sans text-akita-text dark:text-akita-darkText group-hover:text-akita-accent dark:group-hover:text-akita-darkAccent transition duration-150 leading-snug">
+                                        [[ post.title ]]
+                                    </h3>
+                                </a>
+                                
+                                <!-- Post summary -->
+                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 max-w-3xl pt-0.5 font-serif leading-relaxed">
+                                    [[ post.summary ]]
+                                </p>
+                            </div>
+                            
+                            <!-- Actions right -->
+                            <div class="flex items-center space-x-4 shrink-0 justify-between md:justify-end">
+                                <!-- Scroll progress bar if reading -->
+                                <div class="w-20 bg-akita-neutral200 dark:bg-akita-darkNeutral800 rounded-full h-1.5 hidden md:block" v-if="post.status === 'reading'">
+                                    <div class="bg-amber-500 dark:bg-akita-darkAccent h-1.5 rounded-full" :style="{ width: post.scroll_position + '%' }"></div>
+                                </div>
+
+                                <div class="flex items-center space-x-2">
+                                    <!-- Toggle read status -->
+                                    <button 
+                                        @click="toggleReadStatus(post)"
+                                        :title="post.status === 'read' ? 'Marcar como não lido' : 'Marcar como lido'"
+                                        class="p-2 bg-akita-bg dark:bg-akita-darkBg hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-slate-500 dark:text-slate-450 hover:text-akita-accent dark:hover:text-akita-darkAccent rounded-lg transition duration-150 border border-akita-neutral200 dark:border-akita-darkNeutral800"
+                                    >
+                                        <i :data-lucide="post.status === 'read' ? 'rotate-ccw' : 'check'" class="h-4 w-4"></i>
+                                    </button>
+
+                                    <!-- Read details link button -->
+                                    <a 
+                                        :href="post.local_url" 
+                                        class="inline-flex items-center space-x-1 py-2 px-3 bg-akita-neutral100/80 dark:bg-akita-darkNeutral800/80 hover:bg-akita-accent hover:text-white dark:hover:bg-akita-darkAccent dark:hover:text-akita-darkBg rounded-lg text-xs font-bold text-akita-text dark:text-akita-darkText transition duration-150 border border-akita-neutral200 dark:border-akita-darkNeutral800"
+                                    >
+                                        <span>[[ post.status === 'reading' ? 'Continuar' : (post.status === 'read' ? 'Ler de novo' : 'Ler') ]]</span>
+                                        <i data-lucide="arrow-right" class="h-3 w-3"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Player Modal -->
+    <div 
+        v-if="activeVideoId" 
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-opacity duration-300"
+        @click.self="closeVideo"
+    >
+        <div class="bg-akita-bg dark:bg-akita-darkBg border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-2xl overflow-hidden shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transition-all duration-300">
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-akita-neutral200 dark:border-akita-darkNeutral800 flex items-center justify-between font-sans">
+                <h3 class="text-sm font-extrabold text-akita-text dark:text-akita-darkText truncate max-w-[85%]">[[ activeVideoTitle ]]</h3>
+                <button 
+                    @click="closeVideo"
+                    class="p-1.5 rounded-lg text-slate-500 dark:text-slate-450 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 transition duration-150"
+                >
+                    <i data-lucide="x" class="h-5 w-5"></i>
+                </button>
+            </div>
+            
+            <!-- Video Player iframe container (responsive aspect video) -->
+            <div class="relative w-full aspect-video bg-black">
+                <iframe 
+                    :src="'https://www.youtube.com/embed/' + activeVideoId + '?autoplay=1'" 
+                    class="absolute inset-0 w-full h-full border-0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                    allowfullscreen
+                ></iframe>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'js/apps/DashboardController.js' %}"></script>
+{% endblock %}

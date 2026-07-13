@@ -1,0 +1,271 @@
+{% extends 'default.html' %}
+{% load static %}
+
+{% block title %}{{ post.title }} |{% endblock %}
+
+{% block style %}
+<style>
+    /* Styling specifically optimized for reading long articles, mimicking Akita's website */
+    .article-content {
+        font-family: "Source Serif 4", "Lora", Georgia, serif;
+        line-height: 1.75;
+        font-size: 1.1875rem; /* ~19px */
+        color: #2a2622;
+        text-rendering: optimizeLegibility;
+    }
+    .dark .article-content {
+        color: #e8e2d6;
+    }
+    .article-content p {
+        margin-bottom: 1.75rem;
+        text-wrap: pretty;
+    }
+    .article-content h2 {
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 1.625rem;
+        font-weight: 700;
+        margin-top: 2.75rem;
+        margin-bottom: 1.25rem;
+        color: #a63a1e;
+        border-bottom: 1px solid rgba(166, 58, 30, 0.1);
+        padding-bottom: 0.25rem;
+    }
+    .dark .article-content h2 {
+        color: #e2a05a;
+        border-bottom-color: rgba(226, 160, 90, 0.1);
+    }
+    .article-content h3 {
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 1.375rem;
+        font-weight: 600;
+        margin-top: 2.25rem;
+        margin-bottom: 1rem;
+        color: #7f2a12;
+    }
+    .dark .article-content h3 {
+        color: #f2bd82;
+    }
+    .article-content pre {
+        background-color: #f1ece0;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        padding: 1.25rem;
+        border-radius: 0.5rem;
+        overflow-x: auto;
+        margin-bottom: 2rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.9em;
+        line-height: 1.65;
+    }
+    .dark .article-content pre {
+        background-color: #23201c;
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    .article-content code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 0.85em;
+        background-color: #f1ece0;
+        padding: 0.15em 0.35em;
+        border-radius: 0.25rem;
+        color: #a63a1e;
+    }
+    .dark .article-content code {
+        background-color: #23201c;
+        color: #e2a05a;
+    }
+    .article-content pre code {
+        background-color: transparent;
+        padding: 0;
+        color: inherit;
+        font-size: inherit;
+    }
+    .article-content a {
+        color: #a63a1e;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-color: rgba(166, 58, 30, 0.3);
+        transition: color 150ms, text-decoration-color 150ms;
+    }
+    .dark .article-content a {
+        color: #e2a05a;
+        text-decoration-color: rgba(226, 160, 90, 0.3);
+    }
+    .article-content a:hover {
+        color: #7f2a12;
+        text-decoration-color: initial;
+    }
+    .dark .article-content a:hover {
+        color: #f2bd82;
+        text-decoration-color: initial;
+    }
+    .article-content ul, .article-content ol {
+        margin-bottom: 1.75rem;
+        padding-left: 1.5rem;
+    }
+    .article-content ul {
+        list-style-type: disc;
+    }
+    .article-content ol {
+        list-style-type: decimal;
+    }
+    .article-content li {
+        margin-bottom: 0.5rem;
+    }
+    .article-content blockquote {
+        border-left: 3px solid #a63a1e;
+        padding-left: 1.25rem;
+        font-style: italic;
+        color: #615a51;
+        margin-bottom: 1.75rem;
+    }
+    .dark .article-content blockquote {
+        border-left-color: #e2a05a;
+        color: #a39c91;
+    }
+    .article-content img {
+        border-radius: 0.5rem;
+        margin: 2rem auto;
+        max-width: 100%;
+        height: auto;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .dark .article-content img {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .embed-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        max-width: 100%;
+        margin: 2.5rem 0;
+        border-radius: 0.75rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        border: 1px solid rgba(166, 58, 30, 0.08);
+    }
+    .dark .embed-container {
+        box-shadow: 0 10px 32px rgba(0,0,0,0.45);
+        border-color: rgba(226, 160, 90, 0.08);
+        background: #1a1714;
+    }
+    .embed-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Top Sticky Header -->
+<header class="border-b border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-neutral100/90 dark:bg-akita-darkNeutral900/90 backdrop-blur sticky top-0 z-50 transition-colors duration-200">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <a href="{% url 'reader:dashboard' %}" class="flex items-center space-x-1 py-1.5 px-3 rounded-lg hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 transition duration-150 text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText text-sm font-semibold font-sans">
+            <i data-lucide="arrow-left" class="h-4 w-4"></i>
+            <span>Voltar</span>
+        </a>
+        
+        <div class="hidden sm:block text-center max-w-md truncate font-sans">
+            <h2 class="text-sm font-bold text-akita-text dark:text-akita-darkText truncate">{{ post.title }}</h2>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <!-- Theme Toggle Button -->
+            <button 
+                onclick="toggleTheme()" 
+                class="p-2 rounded-lg border border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-bg/50 dark:bg-akita-darkBg/50 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-akita-text dark:text-akita-darkText transition duration-150"
+                title="Alternar Tema"
+            >
+                <i data-lucide="sun" class="h-4 w-4 block dark:hidden"></i>
+                <i data-lucide="moon" class="h-4 w-4 hidden dark:block"></i>
+            </button>
+
+            <!-- Read / Unread toggle -->
+            <button 
+                @click="toggleReadStatus"
+                :class="status === 'read' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' : 'bg-akita-bg dark:bg-akita-darkBg text-slate-500 dark:text-slate-400 border-akita-neutral200 dark:border-akita-darkNeutral800 hover:bg-akita-neutral100 dark:hover:bg-akita-darkNeutral800'"
+                class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition duration-150 font-sans"
+            >
+                <i :data-lucide="status === 'read' ? 'check-circle' : 'circle'" class="h-3.5 w-3.5"></i>
+                <span>[[ status === 'read' ? 'Lido' : 'Marcar como lido' ]]</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Top Progress Bar (Scroll tracker indicator) -->
+    <div class="w-full bg-akita-neutral200 dark:bg-akita-darkNeutral800 h-1">
+        <div class="bg-akita-accent dark:bg-akita-darkAccent h-full transition-all duration-75" :style="{ width: scrollPercentage + '%' }"></div>
+    </div>
+</header>
+
+<!-- Article Page Container -->
+<div class="flex-grow bg-akita-bg dark:bg-akita-darkBg py-10 px-4 transition-colors duration-200">
+    <article class="max-w-2xl mx-auto">
+        <!-- Meta Details -->
+        <header class="mb-8 border-b border-akita-neutral200 dark:border-akita-darkNeutral800 pb-6">
+            <div class="flex items-center space-x-3 text-xs text-akita-accent dark:text-akita-darkAccent font-bold font-sans mb-3">
+                <span>Publicado em {{ post.published_at|date:"d \d\e F \d\e Y" }}</span>
+                <span class="text-slate-400 dark:text-slate-650">•</span>
+                <a href="{{ post.url }}" target="_blank" rel="noopener" class="hover:underline inline-flex items-center space-x-1 text-slate-500 dark:text-slate-400 hover:text-akita-accent dark:hover:text-akita-darkAccent">
+                    <span>Ver original</span>
+                    <i data-lucide="external-link" class="h-3 w-3"></i>
+                </a>
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl font-extrabold font-sans text-akita-text dark:text-akita-darkText leading-tight tracking-tight mb-4">
+                {{ post.title }}
+            </h1>
+            
+            <div class="flex items-center justify-between font-sans">
+                <div class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+                    <i data-lucide="clock" class="h-4 w-4"></i>
+                    <span>Progresso de leitura: <strong class="text-akita-accent dark:text-akita-darkAccent">[[ Math.round(scrollPercentage) ]]%</strong></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Body Content -->
+        <div class="article-content prose prose-neutral max-w-none">
+            {{ post.content|safe }}
+        </div>
+        
+        <!-- Bottom Action Panel -->
+        <footer class="mt-16 pt-8 border-t border-akita-neutral200 dark:border-akita-darkNeutral800 text-center font-sans">
+            <div v-if="status !== 'read'" class="mb-6">
+                <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">Terminou de ler este post?</p>
+                <button 
+                    @click="markAsRead"
+                    class="inline-flex items-center space-x-2 px-6 py-3 rounded-xl bg-akita-accent hover:bg-akita-accentStrong dark:bg-akita-darkAccent dark:hover:bg-akita-darkAccentStrong text-white dark:text-akita-darkBg font-bold text-sm transition duration-200 shadow-sm"
+                >
+                    <i data-lucide="check" class="h-4 w-4"></i>
+                    <span>Sim, marcar como Lido!</span>
+                </button>
+            </div>
+            
+            <div v-else class="mb-6 py-4 bg-emerald-500/5 rounded-xl border border-emerald-500/10 max-w-md mx-auto">
+                <i data-lucide="party-popper" class="h-8 w-8 text-emerald-600 dark:text-emerald-400 mx-auto mb-2"></i>
+                <h4 class="text-emerald-600 dark:text-emerald-400 font-extrabold text-sm">Post Lido!</h4>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Você concluiu a leitura deste artigo.</p>
+            </div>
+
+            <a href="{% url 'reader:dashboard' %}" class="inline-flex items-center space-x-2 text-sm text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText font-semibold transition duration-150">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                <span>Voltar para a lista de posts</span>
+            </a>
+        </footer>
+    </article>
+</div>
+
+<!-- Embedded context parameters for Vue -->
+<div id="meta-context" 
+     data-post-id="{{ post.id }}" 
+     data-initial-status="{{ progress.status }}" 
+     data-initial-scroll="{{ progress.scroll_position }}" 
+     class="hidden"></div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'js/apps/ReaderController.js' %}"></script>
+{% endblock %}

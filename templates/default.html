@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        akita: {
+                            // Light Mode (Sepia/Cream)
+                            bg: '#faf7f0',
+                            neutral100: '#f1ece0',
+                            neutral200: '#e8e2d2',
+                            text: '#2a2622',
+                            accent: '#a63a1e',
+                            accentStrong: '#7f2a12',
+                            accentSoft: 'rgba(166, 58, 30, 0.13)',
+                            
+                            // Dark Mode (Dark Sepia/Warm Charcoal)
+                            darkBg: '#1a1714',
+                            darkNeutral800: '#2a2520',
+                            darkNeutral900: '#23201c',
+                            darkNeutral850: '#26211d',
+                            darkText: '#e8e2d6',
+                            darkAccent: '#e2a05a',
+                            darkAccentStrong: '#f2bd82',
+                            darkAccentSoft: 'rgba(226, 160, 90, 0.16)',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Source Sans 3"', 'sans-serif'],
+                        serif: ['"Source Serif 4"', 'serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Theme Initializer & Toggle -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Vue 3 -->
+    <script src="{% static 'js/vue3.5.49.global.js' %}"></script>
+    
+    <title>{% block title %}{% endblock %} Leitor Akita</title>
+    
+    <style>
+        [v-cloak] { display: none !important; }
+        
+        /* Custom scrollbar for premium feel matching Akita palette */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #faf7f0;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #1a1714;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e8e2d2;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #2a2520;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4ccb9;
+        }
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: #38312a;
+        }
+    </style>
+    {% block style %}{% endblock %}
+</head>
+<body class="bg-akita-bg dark:bg-akita-darkBg text-akita-text dark:text-akita-darkText font-serif h-full flex flex-col antialiased selection:bg-akita-accentSoft dark:selection:bg-akita-darkAccentSoft">
+    <div id="app" {% if vue %}data-controller="{{ vue }}"{% endif %} v-cloak class="h-full flex flex-col">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Scripts -->
+    <script type="text/javascript" src="{% static 'js/app.js' %}"></script>
+    {% block js %}{% endblock %}
+
+    <script>
+        // Mount Vue app
+        VueApp.mount('{{ vue }}');
+        
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => console.log('Service Worker registrado!', reg))
+                    .catch(err => console.log('Falha ao registrar Service Worker', err));
+            });
+        }
+    </script>
+</body>
+</html>
