@@ -1,0 +1,33 @@
+# Sobe o app + PostgreSQL. Variáveis vêm do .env (se existir) com defaults abaixo.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-akita}
+      POSTGRES_USER: ${POSTGRES_USER:-akita}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-akita}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-akita} -d ${POSTGRES_DB:-akita}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-django-insecure-troque-em-producao}
+      DEBUG: ${DEBUG:-False}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-*}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-}
+      DATABASE_URL: ${DATABASE_URL:-postgres://akita:akita@db:5432/akita}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

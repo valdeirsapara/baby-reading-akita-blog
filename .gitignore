@@ -11,3 +11,9 @@ wheels/
 
 
 *.sqlite3
+
+# Ambiente e segredos
+.env
+
+# Estáticos coletados (gerados pelo collectstatic)
+staticfiles/

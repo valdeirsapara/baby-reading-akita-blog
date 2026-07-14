@@ -1,0 +1,24 @@
+.git
+.gitignore
+.venv
+__pycache__/
+*.py[oc]
+*.egg-info
+build/
+dist/
+wheels/
+
+# Dados e artefatos locais
+*.sqlite3
+db.sqlite3
+staticfiles/
+scratch/
+scratchpad/
+
+# Ambiente e segredos
+.env
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore

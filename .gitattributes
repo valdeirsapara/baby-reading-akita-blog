@@ -1,0 +1,3 @@
+# Scripts shell sempre com LF (evita quebra do shebang em containers Linux)
+*.sh text eol=lf
+docker-entrypoint.sh text eol=lf
