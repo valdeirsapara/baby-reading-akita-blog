@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.utils.text import slugify
 from urllib.parse import urlparse
 
@@ -51,13 +52,18 @@ class ReadingProgress(models.Model):
         ('reading', 'Lendo'),
         ('read', 'Lido'),
     ]
-    post = models.OneToOneField(Post, on_delete=models.CASCADE, related_name='progress')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reading_progress')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='progress')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unread')
     scroll_position = models.FloatField(default=0.0)  # Em porcentagem (0 a 100)
     last_read_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        # Cada usuário tem no máximo um progresso por post
+        unique_together = ('user', 'post')
+
     def __str__(self):
-        return f"{self.post.title} - {self.get_status_display()} ({self.scroll_position:.1f}%)"
+        return f"{self.user} · {self.post.title} - {self.get_status_display()} ({self.scroll_position:.1f}%)"
 
 
 class YouTubeVideo(models.Model):

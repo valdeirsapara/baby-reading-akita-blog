@@ -43,8 +43,8 @@ def archive(request):
 
 def post_detail(request, year, month, day, slug):
     post = get_object_or_404(Post, slug=slug)
-    # Garante que o progresso exista para o post
-    progress, created = ReadingProgress.objects.get_or_create(post=post)
+    # Garante que o progresso exista para este usuário e post
+    progress, created = ReadingProgress.objects.get_or_create(post=post, user=request.user)
     return render(request, 'reader/post_detail.html', {
         'post': post,
         'progress': progress,
@@ -52,14 +52,18 @@ def post_detail(request, year, month, day, slug):
     })
 
 def posts_list(request):
-    posts = Post.objects.all().prefetch_related('progress')
+    posts = Post.objects.all()
+    # Progresso do usuário atual, indexado por post
+    progress_map = {
+        rp.post_id: rp
+        for rp in ReadingProgress.objects.filter(user=request.user)
+    }
     data = []
     for post in posts:
-        # Pega ou cria progresso padrão
-        progress = getattr(post, 'progress', None)
+        progress = progress_map.get(post.id)
         status = progress.status if progress else 'unread'
         scroll_position = progress.scroll_position if progress else 0.0
-        
+
         data.append({
             'id': post.id,
             'title': post.title,
@@ -83,7 +87,7 @@ def update_progress(request):
         scroll_position = body.get('scroll_position', 0.0)
         
         post = get_object_or_404(Post, id=post_id)
-        progress, created = ReadingProgress.objects.get_or_create(post=post)
+        progress, created = ReadingProgress.objects.get_or_create(post=post, user=request.user)
         
         if status:
             progress.status = status
@@ -142,7 +146,7 @@ def sync_feed(request):
                 summary_text = BeautifulSoup(summary_source, 'html.parser').get_text().strip()
                 summary = summary_text[:300] + ('...' if len(summary_text) > 300 else '')
                 
-                # Cria o post
+                # Cria o post (o progresso é criado sob demanda, por usuário)
                 post = Post.objects.create(
                     title=title,
                     url=url,
@@ -150,9 +154,6 @@ def sync_feed(request):
                     summary=summary,
                     content=content
                 )
-                
-                # Inicializa o progresso
-                ReadingProgress.objects.create(post=post, status='unread', scroll_position=0.0)
                 new_posts.append(post)
         
         # Enriquecimento com vídeos do YouTube fora da transação

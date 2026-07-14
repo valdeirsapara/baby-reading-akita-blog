@@ -74,8 +74,10 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(ReadingProgress)
 class ReadingProgressAdmin(admin.ModelAdmin):
-    list_display = ('post', 'status', 'scroll_position', 'last_read_at')
-    list_filter = ('status',)
+    list_display = ('user', 'post', 'status', 'scroll_position', 'last_read_at')
+    list_filter = ('status', 'user')
+    search_fields = ('post__title', 'user__username')
+    raw_id_fields = ('post',)
 
 
 @admin.register(YouTubeVideo)

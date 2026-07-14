@@ -27,14 +27,28 @@
             </span>
 
             <!-- Theme Toggle Button -->
-            <button 
-                onclick="toggleTheme()" 
+            <button
+                onclick="toggleTheme()"
                 class="p-2 rounded-lg border border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-bg/50 dark:bg-akita-darkBg/50 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-akita-text dark:text-akita-darkText transition duration-150"
                 title="Alternar Tema"
             >
                 <i data-lucide="sun" class="h-4 w-4 block dark:hidden"></i>
                 <i data-lucide="moon" class="h-4 w-4 hidden dark:block"></i>
             </button>
+
+            <!-- Logout -->
+            {% if user.is_authenticated %}
+            <form method="post" action="{% url 'auth_app:logout' %}" class="flex items-center">
+                {% csrf_token %}
+                <button
+                    type="submit"
+                    class="p-2 rounded-lg border border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-bg/50 dark:bg-akita-darkBg/50 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-akita-text dark:text-akita-darkText transition duration-150"
+                    title="Sair ({{ user.get_username }})"
+                >
+                    <i data-lucide="log-out" class="h-4 w-4"></i>
+                </button>
+            </form>
+            {% endif %}
         </div>
     </div>
 </header>

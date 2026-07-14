@@ -1,5 +1,6 @@
 from django.urls import path
 from django.views.generic import TemplateView
+from django.contrib.auth.decorators import login_not_required
 from . import views
 
 app_name = 'reader'
@@ -11,5 +12,5 @@ urlpatterns = [
     path('<int:year>/<str:month>/<str:day>/<slug:slug>/', views.post_detail, name='post_detail'),
     path('update-progress/', views.update_progress, name='update_progress'),
     path('sync-feed/', views.sync_feed, name='sync_feed'),
-    path('service-worker.js', TemplateView.as_view(template_name='service-worker.js', content_type='application/javascript'), name='service_worker'),
+    path('service-worker.js', login_not_required(TemplateView.as_view(template_name='service-worker.js', content_type='application/javascript')), name='service_worker'),
 ]

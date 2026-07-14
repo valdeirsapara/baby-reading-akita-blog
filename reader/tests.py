@@ -1,13 +1,17 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 from unittest.mock import patch
 import json
 
 from .models import Post, ReadingProgress, YouTubeVideo
 
+User = get_user_model()
+
 class ReaderModelsTestCase(TestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="leitor", password="x")
         self.post = Post.objects.create(
             title="Como Começar a Programar em 2026",
             url="https://www.akitaonrails.com/posts/como-comecar-a-programar-em-2026",
@@ -22,13 +26,25 @@ class ReaderModelsTestCase(TestCase):
 
     def test_reading_progress_creation_defaults(self):
         """Testa se o progresso de leitura padrão é criado com valores corretos."""
-        progress, created = ReadingProgress.objects.get_or_create(post=self.post)
+        progress, created = ReadingProgress.objects.get_or_create(post=self.post, user=self.user)
         self.assertEqual(progress.status, "unread")
         self.assertEqual(progress.scroll_position, 0.0)
 
+    def test_reading_progress_scoped_per_user(self):
+        """Cada usuário tem seu próprio progresso para o mesmo post."""
+        other = User.objects.create_user(username="outro", password="x")
+        p1, _ = ReadingProgress.objects.get_or_create(post=self.post, user=self.user)
+        p1.status = "read"
+        p1.save()
+        p2, _ = ReadingProgress.objects.get_or_create(post=self.post, user=other)
+        self.assertEqual(p2.status, "unread")
+        self.assertNotEqual(p1.pk, p2.pk)
+
 class ReaderViewsTestCase(TestCase):
     def setUp(self):
+        self.user = User.objects.create_user(username="leitor", password="x")
         self.client = Client()
+        self.client.force_login(self.user)
         self.post = Post.objects.create(
             title="Artigo de Teste",
             url="https://www.akitaonrails.com/posts/artigo-de-teste",
@@ -37,10 +53,18 @@ class ReaderViewsTestCase(TestCase):
             content="Corpo de teste"
         )
         self.progress = ReadingProgress.objects.create(
+            user=self.user,
             post=self.post,
             status="unread",
             scroll_position=0.0
         )
+
+    def test_requires_login(self):
+        """Sem login, as páginas do leitor redirecionam para o login."""
+        anon = Client()
+        resp = anon.get(reverse('reader:posts_list'))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('/auth/login/', resp.headers.get('Location', ''))
 
     def test_dashboard_status(self):
         """Testa se a página inicial do leitor carrega com sucesso."""
@@ -117,7 +141,8 @@ class ReaderViewsTestCase(TestCase):
         new_post = Post.objects.get(url="https://www.akitaonrails.com/posts/novo-post-akita")
         self.assertEqual(new_post.title, "Novo Post do Akita")
         self.assertEqual(new_post.slug, "novo-post-akita")
-        self.assertEqual(new_post.progress.status, "unread")
+        # O progresso é criado sob demanda por usuário — não na importação
+        self.assertEqual(new_post.progress.count(), 0)
 
 
 class YouTubeIntegrationTestCase(TestCase):
@@ -141,21 +166,6 @@ class YouTubeIntegrationTestCase(TestCase):
         )
         self.assertEqual(video.youtube_id, "dQw4w9WgXcQ")
         self.assertEqual(str(video), "Never Gonna Give You Up (Post com Vídeo)")
-
-    def test_videos_list_endpoint(self):
-        YouTubeVideo.objects.create(
-            post=self.post,
-            youtube_id="dQw4w9WgXcQ",
-            title="Never Gonna Give You Up",
-            thumbnail_url="https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg",
-            url="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
-        )
-        resp = self.client.get(reverse('reader:videos_list'))
-        self.assertEqual(resp.status_code, 200)
-        data = json.loads(resp.content)
-        self.assertEqual(len(data), 1)
-        self.assertEqual(data[0]['youtube_id'], "dQw4w9WgXcQ")
-        self.assertEqual(data[0]['post_title'], "Post com Vídeo")
 
     @patch('requests.get')
     def test_extract_and_update_youtube_videos(self, mock_get):

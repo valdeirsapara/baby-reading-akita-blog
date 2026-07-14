@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Post, ReadingProgress
+from .models import Post
 from .utils import extract_and_update_youtube_videos
 
 ARCHIVE_URL = "https://akitaonrails.com/archives/"
@@ -112,7 +112,6 @@ def import_archive(limit=0, delay=0.5, skip_content=False, extract_videos=True, 
                     summary=summary,
                     content=content,
                 )
-                ReadingProgress.objects.create(post=post, status='unread', scroll_position=0.0)
         except Exception as e:
             _log(logger, f"  Erro ao criar '{entry['title']}': {e}")
             continue
