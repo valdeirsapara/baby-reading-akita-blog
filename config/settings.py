@@ -100,13 +100,38 @@ LOGOUT_REDIRECT_URL = 'auth_app:login'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-# DATABASE_URL faz o parse via dj-database-url; padrão: SQLite local.
-DATABASES = {
-    'default': dj_database_url.config(
+_DATABASE_URL = os.environ.get('DATABASE_URL', '')
+
+if _DATABASE_URL.startswith('libsql://'):
+    # Turso / libSQL (cliente HTTP puro-Python via django-libsql).
+    # O token pode vir na própria URL (?authToken=...) ou em TURSO_AUTH_TOKEN.
+    _name = _DATABASE_URL
+    _token = os.environ.get('TURSO_AUTH_TOKEN', '')
+    if _token and 'authToken=' not in _name:
+        _sep = '&' if '?' in _name else '?'
+        _name = f"{_name}{_sep}authToken={_token}"
+    DATABASES = {
+        'default': {
+            'ENGINE': 'libsql.db.backends.sqlite3',
+            'NAME': _name,
+        }
+    }
+else:
+    # DATABASE_URL faz o parse via dj-database-url; padrão: SQLite local.
+    _db = dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=int(os.environ.get('CONN_MAX_AGE', 600)),
     )
-}
+
+    # Compatibilidade com pgBouncer em modo "transaction" (ex.: pooler do Supabase na
+    # porta 6543): esse modo não suporta prepared statements nem conexões persistentes.
+    _is_transaction_pooler = str(_db.get('PORT')) == '6543' or env_bool('DB_TRANSACTION_POOLER', False)
+    if _db.get('ENGINE', '').endswith('postgresql') and _is_transaction_pooler:
+        _db['CONN_MAX_AGE'] = 0
+        _db['DISABLE_SERVER_SIDE_CURSORS'] = True
+        _db.setdefault('OPTIONS', {})['prepare_threshold'] = None
+
+    DATABASES = {'default': _db}
 
 
 # Password validation
