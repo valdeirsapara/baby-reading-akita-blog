@@ -71,6 +71,34 @@
         </div>
     </div>
 
+    <!-- Destaques -->
+    <div v-if="highlightedPosts.length" class="mb-6 border border-akita-neutral200/80 dark:border-akita-darkNeutral800/80 rounded-2xl bg-akita-neutral100/30 dark:bg-akita-darkNeutral900/30 overflow-hidden">
+        <div class="flex items-center justify-between p-5">
+            <h2 class="text-xl font-extrabold text-akita-text dark:text-akita-darkText border-b-2 border-akita-accent dark:border-akita-darkAccent pb-1">
+                Destaques
+            </h2>
+            <button
+                @click="toggleHighlights"
+                class="inline-flex items-center space-x-1.5 py-1.5 px-4 rounded-full text-sm font-semibold text-akita-accent dark:text-akita-darkAccent border border-akita-accent/40 dark:border-akita-darkAccent/40 hover:bg-akita-accent hover:text-white dark:hover:bg-akita-darkAccent dark:hover:text-akita-darkBg transition duration-150"
+            >
+                <span>[[ showHighlights ? 'Ocultar' : 'Mostrar' ]]</span>
+                <i :data-lucide="showHighlights ? 'chevron-up' : 'chevron-down'" class="h-4 w-4"></i>
+            </button>
+        </div>
+
+        <div v-if="showHighlights" class="px-5 pb-5 space-y-2">
+            <a
+                v-for="post in highlightedPosts"
+                :key="post.id"
+                :href="post.local_url"
+                class="group flex items-center gap-2 py-1.5 text-akita-text dark:text-akita-darkText hover:text-akita-accent dark:hover:text-akita-darkAccent transition duration-150"
+            >
+                <i data-lucide="diamond" class="h-3 w-3 text-akita-accent dark:text-akita-darkAccent shrink-0 fill-current"></i>
+                <span class="font-semibold group-hover:underline">[[ post.title ]]</span>
+            </a>
+        </div>
+    </div>
+
     <!-- Filter and Search -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <!-- Tabs -->
@@ -82,27 +110,12 @@
             >
                 Fila de Leitura
             </button>
-            <button 
+            <button
                 @click="currentTab = 'read'"
                 :class="currentTab === 'read' ? 'bg-akita-accent text-white dark:bg-akita-darkAccent dark:text-akita-darkBg shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText'"
                 class="px-4 py-2 text-sm font-semibold rounded-lg transition duration-200"
             >
                 Lidos
-            </button>
-            <button 
-                @click="currentTab = 'all'"
-                :class="currentTab === 'all' ? 'bg-akita-accent text-white dark:bg-akita-darkAccent dark:text-akita-darkBg shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText'"
-                class="px-4 py-2 text-sm font-semibold rounded-lg transition duration-200"
-            >
-                Todos
-            </button>
-            <button 
-                @click="currentTab = 'videos'"
-                :class="currentTab === 'videos' ? 'bg-akita-accent text-white dark:bg-akita-darkAccent dark:text-akita-darkBg shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText'"
-                class="px-4 py-2 text-sm font-semibold rounded-lg transition duration-200 flex items-center space-x-1.5"
-            >
-                <i data-lucide="video" class="h-3.5 w-3.5"></i>
-                <span>Vídeos</span>
             </button>
         </div>
 
@@ -132,82 +145,33 @@
     </div>
 
     <div v-else>
-        <!-- Videos Tab Content -->
-        <div v-if="currentTab === 'videos'" class="space-y-6">
-            <div v-if="filteredVideos.length === 0" class="bg-akita-neutral100/20 dark:bg-akita-darkNeutral900/20 border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-2xl p-12 text-center">
-                <div class="inline-flex p-4 bg-akita-neutral100/50 dark:bg-akita-darkNeutral900/50 rounded-full text-slate-400 mb-4">
-                    <i data-lucide="video-off" class="h-10 w-10"></i>
-                </div>
-                <h3 class="text-lg font-bold text-akita-text dark:text-akita-darkText mb-1">Nenhum vídeo encontrado</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                    [[ searchQuery ? 'Nenhum resultado corresponde à sua pesquisa.' : 'Parece que não há vídeos indexados nos posts salvos no leitor.' ]]
-                </p>
-            </div>
-            
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                <div 
-                    v-for="video in filteredVideos" 
-                    :key="video.id" 
-                    class="group flex flex-col bg-akita-neutral100/30 dark:bg-akita-darkNeutral900/30 border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-xl overflow-hidden hover:shadow-lg dark:hover:shadow-black/30 hover:border-akita-accent/30 dark:hover:border-akita-darkAccent/30 transition-all duration-300 transform hover:-translate-y-1"
-                >
-                    <!-- Thumbnail with Play Button Overlay -->
-                    <div class="relative aspect-video w-full overflow-hidden bg-black cursor-pointer" @click="openVideo(video.youtube_id, video.title)">
-                        <img 
-                            :src="video.thumbnail_url" 
-                            :alt="video.title" 
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
-                        >
-                        <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity duration-200">
-                            <div class="p-3 bg-white/90 dark:bg-akita-darkNeutral900/90 rounded-full text-akita-accent dark:text-akita-darkAccent shadow-md transform scale-90 group-hover:scale-100 transition-transform duration-300">
-                                <i data-lucide="play" class="h-6 w-6 fill-current"></i>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Video details -->
-                    <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
-                        <div class="space-y-1">
-                            <h3 
-                                @click="openVideo(video.youtube_id, video.title)"
-                                class="text-sm font-bold leading-snug text-akita-text dark:text-akita-darkText hover:text-akita-accent dark:hover:text-akita-darkAccent cursor-pointer transition-colors duration-150 line-clamp-2"
-                            >
-                                [[ video.title ]]
-                            </h3>
-                        </div>
-                        
-                        <div class="border-t border-akita-neutral200/40 dark:border-akita-darkNeutral800/45 pt-2.5 flex flex-col space-y-1 text-[11px] text-slate-500 dark:text-slate-400 font-sans">
-                            <span class="font-semibold truncate">Mencionado em:</span>
-                            <a 
-                                :href="video.post_url" 
-                                class="hover:underline text-akita-accent dark:text-akita-darkAccent font-bold truncate inline-flex items-center space-x-1"
-                            >
-                                <span>[[ video.post_title ]]</span>
-                                <i data-lucide="arrow-up-right" class="h-3 w-3"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Posts Content -->
-        <div v-else>
+        <div>
             <div v-if="filteredPosts.length === 0" class="bg-akita-neutral100/20 dark:bg-akita-darkNeutral900/20 border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-2xl p-12 text-center">
                 <div class="inline-flex p-4 bg-akita-neutral100/50 dark:bg-akita-darkNeutral900/50 rounded-full text-slate-400 mb-4">
                     <i data-lucide="inbox" class="h-10 w-10"></i>
                 </div>
                 <h3 class="text-lg font-bold text-akita-text dark:text-akita-darkText mb-1">Nenhum post encontrado</h3>
                 <p class="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
-                    [[ searchQuery ? 'Nenhum resultado corresponde à sua pesquisa.' : 'Parece que você ainda não sincronizou o feed ou a fila de leitura está vazia!' ]]
+                    [[ searchQuery ? 'Nenhum resultado corresponde à sua pesquisa.' : 'Nenhum post recente por aqui. Veja o arquivo completo ou sincronize o feed.' ]]
                 </p>
-                <button 
-                    v-if="!searchQuery"
-                    @click="syncFeed" 
-                    class="px-5 py-2.5 rounded-lg bg-akita-accent hover:bg-akita-accentStrong dark:bg-akita-darkAccent dark:hover:bg-akita-darkAccentStrong text-white dark:text-akita-darkBg text-sm font-semibold transition duration-200 shadow-sm inline-flex items-center space-x-2"
-                >
-                    <i data-lucide="refresh-cw" class="h-4 w-4"></i>
-                    <span>Sincronizar agora</span>
-                </button>
+                <div v-if="!searchQuery" class="flex items-center justify-center gap-3">
+                    <a
+                        v-if="hasArchive"
+                        href="{% url 'reader:archive' %}"
+                        class="px-5 py-2.5 rounded-lg border border-akita-accent/30 dark:border-akita-darkAccent/30 text-akita-accent dark:text-akita-darkAccent hover:bg-akita-accent hover:text-white dark:hover:bg-akita-darkAccent dark:hover:text-akita-darkBg text-sm font-semibold transition duration-200 inline-flex items-center space-x-2"
+                    >
+                        <span>Arquivo completo</span>
+                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    </a>
+                    <button
+                        @click="syncFeed"
+                        class="px-5 py-2.5 rounded-lg bg-akita-accent hover:bg-akita-accentStrong dark:bg-akita-darkAccent dark:hover:bg-akita-darkAccentStrong text-white dark:text-akita-darkBg text-sm font-semibold transition duration-200 shadow-sm inline-flex items-center space-x-2"
+                    >
+                        <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                        <span>Sincronizar agora</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Posts Grouped chronologically by Year - Month -->
@@ -297,36 +261,17 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Video Player Modal -->
-    <div 
-        v-if="activeVideoId" 
-        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm transition-opacity duration-300"
-        @click.self="closeVideo"
-    >
-        <div class="bg-akita-bg dark:bg-akita-darkBg border border-akita-neutral200/50 dark:border-akita-darkNeutral800/50 rounded-2xl overflow-hidden shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col transition-all duration-300">
-            <!-- Modal Header -->
-            <div class="p-4 border-b border-akita-neutral200 dark:border-akita-darkNeutral800 flex items-center justify-between font-sans">
-                <h3 class="text-sm font-extrabold text-akita-text dark:text-akita-darkText truncate max-w-[85%]">[[ activeVideoTitle ]]</h3>
-                <button 
-                    @click="closeVideo"
-                    class="p-1.5 rounded-lg text-slate-500 dark:text-slate-450 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 transition duration-150"
-                >
-                    <i data-lucide="x" class="h-5 w-5"></i>
-                </button>
-            </div>
-            
-            <!-- Video Player iframe container (responsive aspect video) -->
-            <div class="relative w-full aspect-video bg-black">
-                <iframe 
-                    :src="'https://www.youtube.com/embed/' + activeVideoId + '?autoplay=1'" 
-                    class="absolute inset-0 w-full h-full border-0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                    allowfullscreen
-                ></iframe>
+                <!-- Arquivo completo: leva para a página com todos os posts antigos -->
+                <div v-if="hasArchive" class="pt-4 text-center">
+                    <a
+                        href="{% url 'reader:archive' %}"
+                        class="inline-flex items-center space-x-2 py-2.5 px-6 rounded-lg text-sm font-bold text-akita-accent dark:text-akita-darkAccent border border-akita-accent/30 dark:border-akita-darkAccent/30 hover:bg-akita-accent hover:text-white dark:hover:bg-akita-darkAccent dark:hover:text-akita-darkBg transition duration-150"
+                    >
+                        <span>Arquivo completo</span>
+                        <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                    </a>
+                </div>
             </div>
         </div>
     </div>

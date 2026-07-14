@@ -112,6 +112,7 @@ def extract_and_update_youtube_videos(post):
                 src=f"https://www.youtube.com/embed/{video_id}", 
                 frameborder="0", 
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share",
+                referrerpolicy="strict-origin-when-cross-origin",
                 allowfullscreen="allowfullscreen"
             )
             container.clear()

@@ -15,6 +15,32 @@ from .models import Post, ReadingProgress
 def dashboard(request):
     return render(request, 'reader/dashboard.html', {'vue': 'DashboardController'})
 
+MESES_PT = {
+    1: 'Janeiro', 2: 'Fevereiro', 3: 'Março', 4: 'Abril', 5: 'Maio', 6: 'Junho',
+    7: 'Julho', 8: 'Agosto', 9: 'Setembro', 10: 'Outubro', 11: 'Novembro', 12: 'Dezembro',
+}
+
+def archive(request):
+    """Página de arquivo completo: todos os posts agrupados por Ano - Mês."""
+    posts = Post.objects.all().order_by('-published_at')
+    groups = []
+    current_key = None
+    for post in posts:
+        key = f"{post.published_at.year} - {MESES_PT[post.published_at.month]}"
+        if key != current_key:
+            groups.append({
+                'key': key,
+                'anchor': f"{post.published_at.year}-{post.published_at.month:02d}",
+                'posts': [],
+            })
+            current_key = key
+        groups[-1]['posts'].append(post)
+    return render(request, 'reader/archive.html', {
+        'groups': groups,
+        'total': posts.count(),
+        'vue': 'ArchiveController',
+    })
+
 def post_detail(request, year, month, day, slug):
     post = get_object_or_404(Post, slug=slug)
     # Garante que o progresso exista para o post
@@ -44,6 +70,7 @@ def posts_list(request):
             'slug': post.slug,
             'status': status,
             'scroll_position': scroll_position,
+            'featured': post.featured,
         })
     return JsonResponse(data, safe=False)
 
@@ -139,22 +166,4 @@ def sync_feed(request):
         return JsonResponse({'success': True, 'new_posts_count': len(new_posts)})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
-
-
-def videos_list(request):
-    from .models import YouTubeVideo
-    videos = YouTubeVideo.objects.select_related('post').order_by('-post__published_at')
-    data = []
-    for video in videos:
-        data.append({
-            'id': video.id,
-            'youtube_id': video.youtube_id,
-            'title': video.title,
-            'thumbnail_url': video.thumbnail_url,
-            'url': video.url,
-            'post_title': video.post.title,
-            'post_url': video.post.get_absolute_url(),
-            'published_at': video.post.published_at.isoformat(),
-        })
-    return JsonResponse(data, safe=False)
 

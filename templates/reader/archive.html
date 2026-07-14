@@ -1,0 +1,84 @@
+{% extends 'default.html' %}
+{% load static %}
+
+{% block title %}Arquivo completo |{% endblock %}
+
+{% block content %}
+<!-- Top Header -->
+<header class="border-b border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-neutral100/90 dark:bg-akita-darkNeutral900/90 backdrop-blur sticky top-0 z-50 transition-colors duration-200">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <a href="{% url 'reader:dashboard' %}" class="flex items-center space-x-3 group">
+            <div class="p-2 bg-gradient-to-tr from-akita-accent to-akita-accentStrong dark:from-akita-darkAccent dark:to-akita-darkAccentStrong rounded-xl shadow-md">
+                <i data-lucide="book-open" class="h-6 w-6 text-akita-bg dark:text-akita-darkBg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-extrabold font-sans text-akita-text dark:text-akita-darkText group-hover:text-akita-accent dark:group-hover:text-akita-darkAccent transition duration-150">
+                    Arquivo completo
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 font-sans">{{ total }} posts do AkitaOnRails.com</p>
+            </div>
+        </a>
+
+        <div class="flex items-center space-x-3">
+            <a href="{% url 'reader:dashboard' %}" class="inline-flex items-center space-x-1.5 py-2 px-3 rounded-lg text-sm font-semibold text-akita-text dark:text-akita-darkText border border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-bg/50 dark:bg-akita-darkBg/50 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 transition duration-150">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                <span class="hidden sm:inline">Voltar ao início</span>
+            </a>
+            <button
+                onclick="toggleTheme()"
+                class="p-2 rounded-lg border border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-bg/50 dark:bg-akita-darkBg/50 hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-akita-text dark:text-akita-darkText transition duration-150"
+                title="Alternar Tema"
+            >
+                <i data-lucide="sun" class="h-4 w-4 block dark:hidden"></i>
+                <i data-lucide="moon" class="h-4 w-4 hidden dark:block"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main id="top" class="flex-grow max-w-5xl mx-auto w-full px-4 py-8 font-sans">
+    <div class="flex flex-col md:flex-row gap-10">
+        <!-- Lista principal -->
+        <div class="flex-grow min-w-0 space-y-10">
+            {% for group in groups %}
+            <section id="{{ group.anchor }}" class="scroll-mt-24 space-y-4">
+                <h2 class="text-2xl font-extrabold text-akita-text dark:text-akita-darkText border-b border-akita-neutral200 dark:border-akita-darkNeutral800 pb-1.5">
+                    {{ group.key }}
+                </h2>
+                <ul class="space-y-2.5">
+                    {% for post in group.posts %}
+                    <li class="flex items-start gap-2.5">
+                        <i data-lucide="diamond" class="h-3 w-3 mt-1.5 shrink-0 text-akita-accent dark:text-akita-darkAccent fill-current"></i>
+                        <a href="{{ post.get_absolute_url }}" class="text-akita-accent dark:text-akita-darkAccent hover:underline font-serif text-lg leading-snug">
+                            {{ post.title }}
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+            {% empty %}
+            <p class="text-slate-500 dark:text-slate-400">Nenhum post no arquivo ainda.</p>
+            {% endfor %}
+        </div>
+
+        <!-- Navegação lateral por mês -->
+        <aside class="hidden md:block w-52 shrink-0">
+            <nav class="sticky top-24 space-y-1 text-sm">
+                {% for group in groups %}
+                <a href="#{{ group.anchor }}" class="block py-0.5 text-slate-500 dark:text-slate-400 hover:text-akita-accent dark:hover:text-akita-darkAccent transition duration-150">
+                    {{ group.key }}
+                </a>
+                {% endfor %}
+                <a href="#top" class="inline-flex items-center space-x-1.5 pt-3 text-akita-accent dark:text-akita-darkAccent font-semibold hover:underline">
+                    <span>Voltar ao topo</span>
+                    <i data-lucide="chevron-up" class="h-4 w-4"></i>
+                </a>
+            </nav>
+        </aside>
+    </div>
+</main>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript" src="{% static 'js/apps/ArchiveController.js' %}"></script>
+{% endblock %}

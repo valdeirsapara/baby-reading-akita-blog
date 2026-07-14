@@ -6,8 +6,8 @@ app_name = 'reader'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    path('arquivo/', views.archive, name='archive'),
     path('posts/', views.posts_list, name='posts_list'),
-    path('videos/', views.videos_list, name='videos_list'),
     path('<int:year>/<str:month>/<str:day>/<slug:slug>/', views.post_detail, name='post_detail'),
     path('update-progress/', views.update_progress, name='update_progress'),
     path('sync-feed/', views.sync_feed, name='sync_feed'),

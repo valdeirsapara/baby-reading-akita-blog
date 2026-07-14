@@ -9,6 +9,7 @@ class Post(models.Model):
     summary = models.TextField(blank=True)
     content = models.TextField(blank=True)
     slug = models.SlugField(unique=True, max_length=255, blank=True)
+    featured = models.BooleanField(default=False, help_text="Exibe o post na seção Destaques do dashboard.")
 
     class Meta:
         ordering = ['-published_at']

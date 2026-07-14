@@ -2,13 +2,19 @@ registerController('DashboardController', (Vue) => {
     const { ref, computed, onMounted, watch } = Vue;
 
     const posts = ref([]);
-    const videos = ref([]);
     const loading = ref(false);
     const syncing = ref(false);
-    const currentTab = ref('queue'); // 'queue' | 'read' | 'all' | 'videos'
+    const currentTab = ref('queue'); // 'queue' | 'read' | 'all'
     const searchQuery = ref('');
-    const activeVideoId = ref(null);
-    const activeVideoTitle = ref('');
+    const RECENT_MONTHS = 3; // a home mostra só os posts dos últimos meses; o resto vai pro /arquivo
+    const showHighlights = ref(false); // seção "Destaques" começa recolhida, como no Akita
+
+    // Data de corte: posts mais antigos que isso só aparecem na página de arquivo completo
+    const recentCutoff = computed(() => {
+        const d = new Date();
+        d.setMonth(d.getMonth() - RECENT_MONTHS);
+        return d;
+    });
 
     // Fetch posts list from API
     const fetchPosts = async () => {
@@ -24,16 +30,6 @@ registerController('DashboardController', (Vue) => {
         }
     };
 
-    // Fetch YouTube videos list from API
-    const fetchVideos = async () => {
-        try {
-            const data = await api('/videos/');
-            videos.value = data;
-        } catch (e) {
-            console.error('Erro ao buscar vídeos:', e);
-        }
-    };
-
     // Trigger RSS feed synchronization silently in background
     const syncFeed = async () => {
         if (syncing.value) return;
@@ -41,7 +37,7 @@ registerController('DashboardController', (Vue) => {
         try {
             const res = await api('/sync-feed/', { method: 'POST' });
             if (res.success && res.new_posts_count > 0) {
-                await Promise.all([fetchPosts(), fetchVideos()]);
+                await fetchPosts();
             }
         } catch (e) {
             console.error('Erro na sincronização silenciosa em background:', e);
@@ -87,6 +83,16 @@ registerController('DashboardController', (Vue) => {
         }
     };
 
+    // Posts marcados como destaque (via admin)
+    const highlightedPosts = computed(() =>
+        posts.value.filter(p => p.featured)
+    );
+
+    const toggleHighlights = () => {
+        showHighlights.value = !showHighlights.value;
+        setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+    };
+
     // Reactive stats computed from posts
     const stats = computed(() => {
         const counts = { reading: 0, read: 0, unread: 0 };
@@ -100,6 +106,8 @@ registerController('DashboardController', (Vue) => {
 
     // Reactive filtered posts
     const filteredPosts = computed(() => {
+        const searching = !!searchQuery.value;
+        const query = searchQuery.value.toLowerCase();
         return posts.value.filter(post => {
             // Tab filter
             if (currentTab.value === 'queue') {
@@ -108,17 +116,28 @@ registerController('DashboardController', (Vue) => {
                 if (post.status !== 'read') return false;
             }
 
-            // Search filter
-            if (searchQuery.value) {
-                const query = searchQuery.value.toLowerCase();
+            // Search filter (a busca varre todos os posts, ignorando o corte de data)
+            if (searching) {
                 const titleMatch = post.title.toLowerCase().includes(query);
                 const summaryMatch = post.summary && post.summary.toLowerCase().includes(query);
                 return titleMatch || summaryMatch;
             }
 
+            // Sem busca: a home mostra só os posts recentes
+            if (post.published_at && new Date(post.published_at) < recentCutoff.value) {
+                return false;
+            }
+
             return true;
         });
     });
+
+    // Existem posts antigos escondidos (fora do corte)? Então mostramos o link do arquivo.
+    const hasArchive = computed(() =>
+        !searchQuery.value && posts.value.some(
+            p => p.published_at && new Date(p.published_at) < recentCutoff.value
+        )
+    );
 
     // Group posts by Year - Month
     const groupedPosts = computed(() => {
@@ -165,26 +184,6 @@ registerController('DashboardController', (Vue) => {
         return `Dia ${d.getDate().toString().padStart(2, '0')}`;
     };
 
-    // Filtered videos computed
-    const filteredVideos = computed(() => {
-        if (!searchQuery.value) return videos.value;
-        const query = searchQuery.value.toLowerCase();
-        return videos.value.filter(v => 
-            v.title.toLowerCase().includes(query) || 
-            v.post_title.toLowerCase().includes(query)
-        );
-    });
-
-    const openVideo = (youtubeId, title) => {
-        activeVideoId.value = youtubeId;
-        activeVideoTitle.value = title;
-    };
-
-    const closeVideo = () => {
-        activeVideoId.value = null;
-        activeVideoTitle.value = '';
-    };
-
     // Watch tab change to update Lucide icons
     watch(currentTab, () => {
         setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
@@ -192,13 +191,12 @@ registerController('DashboardController', (Vue) => {
 
     // Load initial data and trigger silent feed update on mount
     onMounted(async () => {
-        await Promise.all([fetchPosts(), fetchVideos()]);
+        await fetchPosts();
         syncFeed();
     });
 
     return {
         posts,
-        videos,
         loading,
         syncing,
         currentTab,
@@ -206,11 +204,10 @@ registerController('DashboardController', (Vue) => {
         stats,
         filteredPosts,
         groupedPosts,
-        filteredVideos,
-        activeVideoId,
-        activeVideoTitle,
-        openVideo,
-        closeVideo,
+        hasArchive,
+        highlightedPosts,
+        showHighlights,
+        toggleHighlights,
         syncFeed,
         toggleReadStatus,
         formatDate,
