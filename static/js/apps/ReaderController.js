@@ -4,8 +4,11 @@ registerController('ReaderController', (Vue) => {
     const postId = ref(null);
     const status = ref('unread');
     const scrollPercentage = ref(0.0);
+    const showHeader = ref(true);
     
     let saveTimeout = null;
+    let lastScrollTop = 0;
+    let isInitialMount = true;
 
     // Direct, immediate progress save
     const saveProgress = async (currentStatus, currentScroll) => {
@@ -41,6 +44,17 @@ registerController('ReaderController', (Vue) => {
         let pct = (scrollTop / docHeight) * 100;
         pct = Math.max(0, Math.min(100, pct));
         scrollPercentage.value = pct;
+
+        // Smart header show/hide logic with threshold to prevent jitter/noise
+        const scrollDelta = scrollTop - lastScrollTop;
+        if (!isInitialMount) {
+            if (scrollDelta > 5 && scrollTop > 50) {
+                showHeader.value = false;
+            } else if (scrollDelta < -5 || scrollTop <= 50) {
+                showHeader.value = true;
+            }
+        }
+        lastScrollTop = scrollTop;
 
         // Auto transition states:
         // 1. If scroll > 95%, auto-mark as read
@@ -100,8 +114,16 @@ registerController('ReaderController', (Vue) => {
                         top: scrollTarget,
                         behavior: 'instant'
                     });
+                    lastScrollTop = scrollTarget;
                 }
+                
+                // Allow scroll triggers after layout is settled
+                setTimeout(() => {
+                    isInitialMount = false;
+                }, 100);
             }, 200);
+        } else {
+            isInitialMount = false;
         }
 
         // Attach scroll listener
@@ -117,6 +139,7 @@ registerController('ReaderController', (Vue) => {
     return {
         status,
         scrollPercentage,
+        showHeader,
         markAsRead,
         toggleReadStatus
     };
