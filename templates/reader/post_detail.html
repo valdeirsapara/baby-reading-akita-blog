@@ -131,6 +131,17 @@
     .dark .article-content img {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
+    .article-content table {
+        display: block;
+        max-width: 100%;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+    .article-content table th,
+    .article-content table td {
+        overflow-wrap: normal;
+    }
     .embed-container {
         position: relative;
         padding-bottom: 56.25%;
