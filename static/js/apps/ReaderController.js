@@ -8,7 +8,12 @@ registerController('ReaderController', (Vue) => {
     
     let saveTimeout = null;
     let lastScrollTop = 0;
+    let scrollDirection = null;
+    let directionalDistance = 0;
     let isInitialMount = true;
+
+    const HEADER_SHOW_DISTANCE = 8;
+    const HEADER_HIDE_DISTANCE = 16;
 
     // Direct, immediate progress save
     const saveProgress = async (currentStatus, currentScroll) => {
@@ -45,13 +50,32 @@ registerController('ReaderController', (Vue) => {
         pct = Math.max(0, Math.min(100, pct));
         scrollPercentage.value = pct;
 
-        // Smart header show/hide logic with threshold to prevent jitter/noise
+        // Accumulate small mobile scroll events in the current direction. A single
+        // touch gesture often emits deltas smaller than 5px, so checking only one
+        // event can leave the header hidden until the reader reaches the top.
         const scrollDelta = scrollTop - lastScrollTop;
+        const currentDirection = scrollDelta > 0 ? 'down' : scrollDelta < 0 ? 'up' : null;
+
+        if (currentDirection) {
+            if (currentDirection !== scrollDirection) {
+                scrollDirection = currentDirection;
+                directionalDistance = 0;
+            }
+            directionalDistance += Math.abs(scrollDelta);
+        }
+
         if (!isInitialMount) {
-            if (scrollDelta > 5 && scrollTop > 50) {
-                showHeader.value = false;
-            } else if (scrollDelta < -5 || scrollTop <= 50) {
+            if (scrollTop <= 24) {
                 showHeader.value = true;
+                directionalDistance = 0;
+            } else if (scrollDirection === 'up' && directionalDistance >= HEADER_SHOW_DISTANCE) {
+                showHeader.value = true;
+            } else if (
+                scrollDirection === 'down' &&
+                directionalDistance >= HEADER_HIDE_DISTANCE &&
+                scrollTop > 72
+            ) {
+                showHeader.value = false;
             }
         }
         lastScrollTop = scrollTop;

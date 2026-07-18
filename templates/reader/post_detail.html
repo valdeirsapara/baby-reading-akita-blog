@@ -162,7 +162,7 @@
 <!-- Top Sticky Header -->
 <header 
     :class="showHeader ? 'translate-y-0' : '-translate-y-full'"
-    class="border-b border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-neutral100/90 dark:bg-akita-darkNeutral900/90 backdrop-blur sticky top-0 z-50 transition-all duration-300 ease-in-out transform">
+    class="fixed inset-x-0 top-0 z-50 border-b border-akita-neutral200 dark:border-akita-darkNeutral800 bg-akita-neutral100/90 dark:bg-akita-darkNeutral900/90 backdrop-blur transition-transform duration-200 ease-out transform will-change-transform">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
         <a href="{% url 'reader:dashboard' %}" class="flex items-center space-x-1 py-1.5 px-3 rounded-lg hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 transition duration-150 text-slate-500 dark:text-slate-400 hover:text-akita-text dark:hover:text-akita-darkText text-sm font-semibold font-sans">
             <i data-lucide="arrow-left" class="h-4 w-4"></i>
@@ -196,11 +196,25 @@
         </div>
     </div>
     
-    <!-- Top Progress Bar (Scroll tracker indicator) -->
-    <div class="w-full bg-akita-neutral200 dark:bg-akita-darkNeutral800 h-1">
-        <div class="bg-akita-accent dark:bg-akita-darkAccent h-full transition-all duration-75" :style="{ width: scrollPercentage + '%' }"></div>
-    </div>
 </header>
+
+<!-- Preserve the initial layout height now that the header is fixed to the viewport. -->
+<div class="h-[61px] shrink-0" aria-hidden="true"></div>
+
+<!-- The reading indicator remains visible even while the action header is hidden. -->
+<div
+    class="fixed inset-x-0 top-0 z-[60] h-1 bg-akita-neutral200 dark:bg-akita-darkNeutral800"
+    role="progressbar"
+    aria-label="Progresso de leitura"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    :aria-valuenow="Math.round(scrollPercentage)"
+>
+    <div
+        class="h-full bg-akita-accent dark:bg-akita-darkAccent transition-[width] duration-75 ease-linear"
+        :style="{ width: scrollPercentage + '%' }"
+    ></div>
+</div>
 
 <!-- Article Page Container -->
 <div class="flex-grow bg-akita-bg dark:bg-akita-darkBg py-10 px-4 transition-colors duration-200">
