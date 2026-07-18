@@ -83,6 +83,25 @@ Acesse **http://127.0.0.1:8000** e faça login.
    **"Importar arquivo completo (AkitaOnRails)"**. A importação roda em segundo plano.
 4. Para destacar posts, marque o campo **destaque** deles no admin.
 
+### Importação completa em produção
+
+Em produção, execute a importação como um comando separado do servidor web. Dessa
+forma ela não é interrompida quando um worker do Gunicorn é reiniciado:
+
+```bash
+python manage.py import_akita_posts
+```
+
+Com Docker:
+
+```bash
+docker compose exec web python manage.py import_akita_posts
+```
+
+O comando é retomável: posts que já existem são ignorados, portanto ele pode ser
+executado novamente para buscar somente os que faltam. Use `--help` para ver opções
+como `--limit`, `--delay`, `--skip-content` e `--skip-videos`.
+
 ---
 
 ## Variáveis de ambiente

@@ -2,7 +2,10 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from unittest.mock import patch
+from io import StringIO
 import json
 
 from .models import Post, ReadingProgress, YouTubeVideo
@@ -212,5 +215,45 @@ class YouTubeIntegrationTestCase(TestCase):
         video = YouTubeVideo.objects.first()
         self.assertEqual(video.youtube_id, "dQw4w9WgXcQ")
         self.assertEqual(video.title, "Rick Astley - Never Gonna Give You Up")
+
+
+class ImportAkitaPostsCommandTestCase(TestCase):
+    @patch("reader.management.commands.import_akita_posts.import_archive")
+    def test_command_imports_complete_archive(self, mock_import_archive):
+        mock_import_archive.return_value = 42
+        stdout = StringIO()
+
+        call_command("import_akita_posts", stdout=stdout)
+
+        mock_import_archive.assert_called_once()
+        options = mock_import_archive.call_args.kwargs
+        self.assertEqual(options["limit"], 0)
+        self.assertEqual(options["delay"], 0.5)
+        self.assertFalse(options["skip_content"])
+        self.assertTrue(options["extract_videos"])
+        self.assertIn("42 novo(s) post(s)", stdout.getvalue())
+
+    @patch("reader.management.commands.import_akita_posts.import_archive")
+    def test_command_forwards_options(self, mock_import_archive):
+        mock_import_archive.return_value = 3
+
+        call_command(
+            "import_akita_posts",
+            limit=3,
+            delay=0,
+            skip_content=True,
+            skip_videos=True,
+            stdout=StringIO(),
+        )
+
+        options = mock_import_archive.call_args.kwargs
+        self.assertEqual(options["limit"], 3)
+        self.assertEqual(options["delay"], 0)
+        self.assertTrue(options["skip_content"])
+        self.assertFalse(options["extract_videos"])
+
+    def test_command_rejects_negative_values(self):
+        with self.assertRaises(CommandError):
+            call_command("import_akita_posts", limit=-1, stdout=StringIO())
 
 
