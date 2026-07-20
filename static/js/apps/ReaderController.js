@@ -15,6 +15,21 @@ registerController('ReaderController', (Vue) => {
     const HEADER_SHOW_DISTANCE = 8;
     const HEADER_HIDE_DISTANCE = 16;
 
+    const prepareArticleTables = () => {
+        document.querySelectorAll('.article-content table').forEach((table) => {
+            if (table.parentElement?.classList.contains('article-table-scroll')) return;
+
+            const scrollContainer = document.createElement('div');
+            scrollContainer.className = 'article-table-scroll';
+            scrollContainer.setAttribute('role', 'region');
+            scrollContainer.setAttribute('aria-label', 'Tabela com rolagem horizontal');
+            scrollContainer.setAttribute('tabindex', '0');
+
+            table.parentNode.insertBefore(scrollContainer, table);
+            scrollContainer.appendChild(table);
+        });
+    };
+
     // Direct, immediate progress save
     const saveProgress = async (currentStatus, currentScroll) => {
         try {
@@ -120,6 +135,8 @@ registerController('ReaderController', (Vue) => {
     };
 
     onMounted(() => {
+        prepareArticleTables();
+
         // Retrieve context data from hidden element
         const metaEl = document.getElementById('meta-context');
         if (metaEl) {
