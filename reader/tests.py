@@ -107,6 +107,29 @@ class ReaderViewsTestCase(TestCase):
         self.assertEqual(self.progress.status, "reading")
         self.assertEqual(self.progress.scroll_position, 45.5)
 
+    def test_post_detail_renders_semantic_table_content(self):
+        """Imported tables keep their semantic structure on the article page."""
+        self.post.content = """
+            <table id="model-comparison">
+                <thead>
+                    <tr><th>Modelo</th><th>Tempo</th><th>Tokens</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Opus 4.8</td><td>9516m48s</td><td>8,28M</td></tr>
+                </tbody>
+            </table>
+        """
+        self.post.save()
+
+        resp = self.client.get(self.post.get_absolute_url())
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'id="model-comparison"')
+        self.assertContains(resp, "<thead>", html=False)
+        self.assertContains(resp, "Opus 4.8")
+        self.assertContains(resp, ".article-content table th")
+        self.assertContains(resp, ".article-table-scroll")
+
     @patch('requests.get')
     def test_sync_feed_api(self, mock_get):
         """Testa a sincronização mockada do RSS feed do Akita."""

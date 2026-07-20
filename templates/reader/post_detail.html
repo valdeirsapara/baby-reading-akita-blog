@@ -131,16 +131,97 @@
     .dark .article-content img {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    .article-content table {
-        display: block;
+    .article-table-scroll {
         max-width: 100%;
         overflow-x: auto;
         overscroll-behavior-inline: contain;
         -webkit-overflow-scrolling: touch;
+        margin: 2.25rem 0;
+        border: 1px solid #e0d8c8;
+        border-radius: 0.75rem;
+        background-color: rgba(255, 255, 255, 0.28);
+        scrollbar-width: thin;
+        scrollbar-color: #cfc4b1 transparent;
+    }
+    .dark .article-table-scroll {
+        border-color: #38312a;
+        background-color: rgba(42, 37, 32, 0.42);
+        scrollbar-color: #564a40 transparent;
+    }
+    .article-table-scroll::-webkit-scrollbar {
+        height: 7px;
+    }
+    .article-table-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .article-table-scroll::-webkit-scrollbar-thumb {
+        background-color: #cfc4b1;
+        border-radius: 999px;
+    }
+    .dark .article-table-scroll::-webkit-scrollbar-thumb {
+        background-color: #564a40;
+    }
+    .article-content table {
+        display: table;
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-family: "Source Sans 3", sans-serif;
+        font-size: 0.95rem;
+        line-height: 1.45;
     }
     .article-content table th,
     .article-content table td {
+        padding: 0.85rem 1rem;
+        white-space: nowrap;
         overflow-wrap: normal;
+        text-align: left;
+        vertical-align: middle;
+    }
+    .article-content table th {
+        background-color: #f1e3d6;
+        color: #7f2a12;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.015em;
+    }
+    .dark .article-content table th {
+        background-color: rgba(226, 160, 90, 0.14);
+        color: #f2bd82;
+    }
+    .article-content table th + th,
+    .article-content table td + td {
+        border-left: 1px solid rgba(166, 58, 30, 0.08);
+    }
+    .dark .article-content table th + th,
+    .dark .article-content table td + td {
+        border-left-color: rgba(226, 160, 90, 0.09);
+    }
+    .article-content table tbody td,
+    .article-content table tr + tr td {
+        border-top: 1px solid #e8e2d2;
+    }
+    .dark .article-content table tbody td,
+    .dark .article-content table tr + tr td {
+        border-top-color: #38312a;
+    }
+    .article-content table tbody tr:nth-child(even) td {
+        background-color: rgba(241, 236, 224, 0.48);
+    }
+    .dark .article-content table tbody tr:nth-child(even) td {
+        background-color: rgba(35, 32, 28, 0.55);
+    }
+    .article-content table tbody tr td {
+        transition: background-color 150ms ease;
+    }
+    .article-content table tbody tr:hover td {
+        background-color: rgba(166, 58, 30, 0.07);
+    }
+    .dark .article-content table tbody tr:hover td {
+        background-color: rgba(226, 160, 90, 0.09);
     }
     .embed-container {
         position: relative;
