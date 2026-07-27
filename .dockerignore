@@ -18,7 +18,3 @@ scratchpad/
 # Ambiente e segredos
 .env
 
-# Docker
-Dockerfile
-docker-compose.yml
-.dockerignore
