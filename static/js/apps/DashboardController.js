@@ -154,6 +154,8 @@ registerController('DashboardController', (Vue) => {
                 if (post.status === 'read') return false;
             } else if (currentTab.value === 'reading') {
                 if (post.status !== 'reading') return false;
+                // Ignora o que já foi lido por completo (100%)
+                if (post.scroll_position >= 100) return false;
             } else if (currentTab.value === 'read') {
                 if (post.status !== 'read') return false;
             }
