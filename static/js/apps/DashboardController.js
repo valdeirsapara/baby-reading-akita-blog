@@ -83,6 +83,46 @@ registerController('DashboardController', (Vue) => {
         }
     };
 
+    // Marca / desmarca manualmente um post como "Lendo" a partir do dashboard
+    const markAsReading = async (post) => {
+        const nextStatus = post.status === 'reading' ? 'unread' : 'reading';
+        const initialStatus = post.status;
+        const initialScroll = post.scroll_position;
+
+        // Optimistic UI update
+        post.status = nextStatus;
+        if (nextStatus === 'unread') {
+            post.scroll_position = 0;
+        } else if (post.scroll_position >= 100) {
+            // vinha de "lido": recomeça a leitura
+            post.scroll_position = 0;
+        }
+        setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+
+        try {
+            const res = await api('/update-progress/', {
+                method: 'POST',
+                body: {
+                    post_id: post.id,
+                    status: nextStatus,
+                    scroll_position: post.scroll_position
+                }
+            });
+            if (!res.success) {
+                // Revert on failure
+                post.status = initialStatus;
+                post.scroll_position = initialScroll;
+                setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+                alert('Falha ao atualizar o status no servidor.');
+            }
+        } catch (e) {
+            console.error('Erro ao atualizar status:', e);
+            post.status = initialStatus;
+            post.scroll_position = initialScroll;
+            setTimeout(() => { if (typeof lucide !== 'undefined') lucide.createIcons(); }, 50);
+        }
+    };
+
     // Posts marcados como destaque (via admin)
     const highlightedPosts = computed(() =>
         posts.value.filter(p => p.featured)
@@ -217,6 +257,7 @@ registerController('DashboardController', (Vue) => {
         toggleHighlights,
         syncFeed,
         toggleReadStatus,
+        markAsReading,
         formatDate,
         formatDateDay
     };
