@@ -4,7 +4,7 @@ registerController('DashboardController', (Vue) => {
     const posts = ref([]);
     const loading = ref(false);
     const syncing = ref(false);
-    const currentTab = ref('queue'); // 'queue' | 'read' | 'all'
+    const currentTab = ref('queue'); // 'queue' | 'reading' | 'read' | 'all'
     const searchQuery = ref('');
     const RECENT_MONTHS = 3; // a home mostra só os posts dos últimos meses; o resto vai pro /arquivo
     const showHighlights = ref(false); // seção "Destaques" começa recolhida, como no Akita
@@ -112,6 +112,8 @@ registerController('DashboardController', (Vue) => {
             // Tab filter
             if (currentTab.value === 'queue') {
                 if (post.status === 'read') return false;
+            } else if (currentTab.value === 'reading') {
+                if (post.status !== 'reading') return false;
             } else if (currentTab.value === 'read') {
                 if (post.status !== 'read') return false;
             }
@@ -121,6 +123,11 @@ registerController('DashboardController', (Vue) => {
                 const titleMatch = post.title.toLowerCase().includes(query);
                 const summaryMatch = post.summary && post.summary.toLowerCase().includes(query);
                 return titleMatch || summaryMatch;
+            }
+
+            // Aba "Lendo": mostra tudo que está sendo lido, mesmo os artigos antigos
+            if (currentTab.value === 'reading') {
+                return true;
             }
 
             // Sem busca: a home mostra só os posts recentes
