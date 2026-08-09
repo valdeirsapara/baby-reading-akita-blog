@@ -260,8 +260,20 @@
                                 </div>
 
                                 <div class="flex items-center space-x-2">
+                                    <!-- Marcar/desmarcar como "Lendo" -->
+                                    <button
+                                        @click="markAsReading(post)"
+                                        :title="post.status === 'reading' ? 'Tirar de Lendo' : 'Marcar como lendo'"
+                                        class="p-2 rounded-lg transition duration-150 border"
+                                        :class="post.status === 'reading'
+                                            ? 'bg-amber-500/10 text-amber-600 dark:bg-akita-darkAccentSoft dark:text-akita-darkAccent border-amber-500/40 dark:border-akita-darkAccent/40'
+                                            : 'bg-akita-bg dark:bg-akita-darkBg hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-slate-500 dark:text-slate-450 hover:text-akita-accent dark:hover:text-akita-darkAccent border-akita-neutral200 dark:border-akita-darkNeutral800'"
+                                    >
+                                        <i data-lucide="book-open" class="h-4 w-4"></i>
+                                    </button>
+
                                     <!-- Toggle read status -->
-                                    <button 
+                                    <button
                                         @click="toggleReadStatus(post)"
                                         :title="post.status === 'read' ? 'Marcar como não lido' : 'Marcar como lido'"
                                         class="p-2 bg-akita-bg dark:bg-akita-darkBg hover:bg-akita-neutral200 dark:hover:bg-akita-darkNeutral800 text-slate-500 dark:text-slate-450 hover:text-akita-accent dark:hover:text-akita-darkAccent rounded-lg transition duration-150 border border-akita-neutral200 dark:border-akita-darkNeutral800"
