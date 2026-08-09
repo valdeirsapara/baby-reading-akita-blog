@@ -183,12 +183,20 @@ STATICFILES_DIRS = [
 # Destino do `collectstatic` (usado em produção/Docker)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# WhiteNoise serve os estáticos comprimidos direto pelo app (sem nginx)
+# WhiteNoise serve os estáticos comprimidos direto pelo app (sem nginx).
+# Em produção usamos o backend "Manifest", que põe um hash do conteúdo no nome
+# do arquivo (ex.: DashboardController.a1b2c3.js). Assim, toda alteração gera
+# uma URL nova e o navegador/CDN nunca serve JS ou CSS antigo em cache.
+# Em DEBUG mantemos o backend simples, que dispensa rodar `collectstatic`.
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
+        'BACKEND': (
+            'whitenoise.storage.CompressedStaticFilesStorage'
+            if DEBUG
+            else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+        ),
     },
 }
