@@ -11,6 +11,7 @@ import time
 import json
 
 from .models import Post, ReadingProgress
+from .importer import absolutize_html, fetch_post_content
 
 def dashboard(request):
     return render(request, 'reader/dashboard.html', {'vue': 'DashboardController'})
@@ -111,51 +112,65 @@ def sync_feed(request):
         
         feed = feedparser.parse(resp.content)
         new_posts = []
-        
-        with transaction.atomic():
-            for entry in feed.entries:
-                # Verifica se o post já existe pela URL
-                url = entry.link
-                if Post.objects.filter(url=url).exists():
-                    continue
-                
-                title = entry.title
-                
-                # Trata data de publicação
-                published_at = timezone.now()
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    published_at = timezone.make_aware(
-                        datetime.fromtimestamp(time.mktime(entry.published_parsed))
-                    )
-                elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
-                    published_at = timezone.make_aware(
-                        datetime.fromtimestamp(time.mktime(entry.updated_parsed))
-                    )
-                
-                # Trata conteúdo do post
-                content = ""
-                if hasattr(entry, 'content') and entry.content:
-                    content = entry.content[0].value
-                elif hasattr(entry, 'description') and entry.description:
-                    content = entry.description
-                elif hasattr(entry, 'summary') and entry.summary:
-                    content = entry.summary
-                
-                # Limpa ou formata resumo (summary) — remove tags HTML
-                summary_source = entry.summary if hasattr(entry, 'summary') and entry.summary else content
-                summary_text = BeautifulSoup(summary_source, 'html.parser').get_text().strip()
-                summary = summary_text[:300] + ('...' if len(summary_text) > 300 else '')
-                
-                # Cria o post (o progresso é criado sob demanda, por usuário)
-                post = Post.objects.create(
-                    title=title,
-                    url=url,
-                    published_at=published_at,
-                    summary=summary,
-                    content=content
+
+        # 1ª fase: monta os dados de cada post novo. As requisições de rede ficam
+        # fora da transação, para não segurar o banco aberto enquanto baixamos páginas.
+        pendentes = []
+        for entry in feed.entries:
+            # Verifica se o post já existe pela URL
+            url = entry.link
+            if Post.objects.filter(url=url).exists():
+                continue
+
+            # Trata data de publicação
+            published_at = timezone.now()
+            if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                published_at = timezone.make_aware(
+                    datetime.fromtimestamp(time.mktime(entry.published_parsed))
                 )
-                new_posts.append(post)
-        
+            elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
+                published_at = timezone.make_aware(
+                    datetime.fromtimestamp(time.mktime(entry.updated_parsed))
+                )
+
+            # Conteúdo do feed, usado como resumo e como plano B
+            feed_content = ""
+            if hasattr(entry, 'content') and entry.content:
+                feed_content = entry.content[0].value
+            elif hasattr(entry, 'description') and entry.description:
+                feed_content = entry.description
+            elif hasattr(entry, 'summary') and entry.summary:
+                feed_content = entry.summary
+
+            # Busca a página real do post: é o que traz o conteúdo completo e,
+            # principalmente, as imagens com URL absoluta. Sem isso o RSS entrega
+            # caminhos relativos e as imagens quebram no nosso domínio.
+            content, page_summary = fetch_post_content(url)
+            if not content:
+                # Se a página não respondeu, ao menos corrige as URLs do feed
+                content, _ = absolutize_html(feed_content, base_url=url)
+
+            # Limpa ou formata resumo (summary) — remove tags HTML
+            summary_source = entry.summary if hasattr(entry, 'summary') and entry.summary else feed_content
+            summary_text = BeautifulSoup(summary_source, 'html.parser').get_text().strip()
+            summary = summary_text[:300] + ('...' if len(summary_text) > 300 else '')
+            if not summary:
+                summary = page_summary
+
+            pendentes.append({
+                'title': entry.title,
+                'url': url,
+                'published_at': published_at,
+                'summary': summary,
+                'content': content,
+            })
+
+        # 2ª fase: grava tudo de uma vez, já sem rede envolvida
+        with transaction.atomic():
+            for dados in pendentes:
+                # Cria o post (o progresso é criado sob demanda, por usuário)
+                new_posts.append(Post.objects.create(**dados))
+
         # Enriquecimento com vídeos do YouTube fora da transação
         from .utils import extract_and_update_youtube_videos
         for post in new_posts:

@@ -280,3 +280,109 @@ class ImportAkitaPostsCommandTestCase(TestCase):
             call_command("import_akita_posts", limit=-1, stdout=StringIO())
 
 
+
+
+class ImagensAbsolutasTestCase(TestCase):
+    """As imagens precisam funcionar sozinhas, sem rodar comando no terminal."""
+
+    def test_absolutize_html_corrige_caminhos_relativos(self):
+        """Imagens e links relativos viram absolutos a partir da URL do post."""
+        from .importer import absolutize_html
+
+        html, alterou = absolutize_html(
+            '<p><img src="/images/foo.png"/><a href="/2020/01/01/x/">x</a></p>',
+            base_url='https://www.akitaonrails.com/2026/08/07/post/',
+        )
+        self.assertTrue(alterou)
+        self.assertIn('https://www.akitaonrails.com/images/foo.png', html)
+        self.assertIn('https://www.akitaonrails.com/2020/01/01/x/', html)
+        self.assertNotIn('src="/images/', html)
+
+    def test_absolutize_html_nao_mexe_no_que_ja_esta_absoluto(self):
+        """URLs já absolutas (inclusive de outro domínio) ficam intactas."""
+        from .importer import absolutize_html
+
+        original = '<img src="https://cdn.exemplo.com/a.png"/>'
+        html, alterou = absolutize_html(original, base_url='https://www.akitaonrails.com/p/')
+        self.assertFalse(alterou)
+        self.assertEqual(html, original)
+
+    def test_absolutize_html_e_idempotente(self):
+        """Rodar duas vezes não altera o resultado."""
+        from .importer import absolutize_html
+
+        base = 'https://www.akitaonrails.com/2026/08/07/post/'
+        primeira, _ = absolutize_html('<img src="/img/a.png"/>', base_url=base)
+        segunda, alterou = absolutize_html(primeira, base_url=base)
+        self.assertEqual(primeira, segunda)
+        self.assertFalse(alterou)
+
+    @patch('reader.utils.extract_and_update_youtube_videos', return_value=False)
+    @patch('reader.views.fetch_post_content')
+    @patch('reader.views.requests.get')
+    def test_sync_feed_salva_imagens_absolutas(self, mock_get, mock_fetch, _mock_videos):
+        """O sincronizar busca a página real e grava as imagens já absolutas."""
+        feed = (
+            b'<?xml version="1.0"?><rss version="2.0"><channel>'
+            b'<item><title>Post A</title>'
+            b'<link>https://www.akitaonrails.com/2026/08/07/post-a/</link>'
+            b'<description>&lt;p&gt;Oi&lt;/p&gt;</description>'
+            b'<pubDate>Thu, 07 Aug 2026 12:00:00 GMT</pubDate></item>'
+            b'</channel></rss>'
+        )
+
+        class MockResponse:
+            status_code = 200
+            content = feed
+
+            def raise_for_status(self):
+                pass
+
+        mock_get.return_value = MockResponse()
+        mock_fetch.return_value = (
+            '<div class="content"><img src="https://www.akitaonrails.com/images/p.png"/></div>',
+            'Resumo da pagina',
+        )
+
+        user = User.objects.create_user(username="sync", password="x")
+        client = Client()
+        client.force_login(user)
+        resp = client.post(reverse('reader:sync_feed'))
+
+        self.assertEqual(resp.status_code, 200)
+        post = Post.objects.get(url='https://www.akitaonrails.com/2026/08/07/post-a/')
+        self.assertIn('https://www.akitaonrails.com/images/p.png', post.content)
+        mock_fetch.assert_called_once()
+
+    @patch('reader.utils.extract_and_update_youtube_videos', return_value=False)
+    @patch('reader.views.fetch_post_content', return_value=("", ""))
+    @patch('reader.views.requests.get')
+    def test_sync_feed_corrige_feed_quando_pagina_falha(self, mock_get, _mock_fetch, _mock_videos):
+        """Se a página real não responder, o conteúdo do feed ainda sai absoluto."""
+        feed = (
+            b'<?xml version="1.0"?><rss version="2.0"><channel>'
+            b'<item><title>Post B</title>'
+            b'<link>https://www.akitaonrails.com/2026/08/09/post-b/</link>'
+            b'<description>&lt;p&gt;T&lt;/p&gt;&lt;img src="/images/feed.png"/&gt;</description>'
+            b'<pubDate>Sat, 09 Aug 2026 12:00:00 GMT</pubDate></item>'
+            b'</channel></rss>'
+        )
+
+        class MockResponse:
+            status_code = 200
+            content = feed
+
+            def raise_for_status(self):
+                pass
+
+        mock_get.return_value = MockResponse()
+
+        user = User.objects.create_user(username="sync2", password="x")
+        client = Client()
+        client.force_login(user)
+        resp = client.post(reverse('reader:sync_feed'))
+
+        self.assertEqual(resp.status_code, 200)
+        post = Post.objects.get(url='https://www.akitaonrails.com/2026/08/09/post-b/')
+        self.assertIn('https://www.akitaonrails.com/images/feed.png', post.content)
+        self.assertNotIn('src="/images/', post.content)
