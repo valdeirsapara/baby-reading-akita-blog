@@ -31,6 +31,39 @@ def _log(logger, message):
         logger(message)
 
 
+def absolutize_urls(soup, base_url=BASE_URL):
+    """Converte URLs relativas de imagens e links em absolutas, no lugar.
+
+    O conteúdo vindo do RSS traz caminhos relativos (ex.: /images/foo.png), que
+    quebram quando o HTML é exibido no nosso domínio. Recebe um BeautifulSoup (ou
+    tag) e devolve True se algo foi alterado.
+    """
+    changed = False
+    for img in soup.find_all('img', src=True):
+        novo = urljoin(base_url, img['src'])
+        if novo != img['src']:
+            img['src'] = novo
+            changed = True
+    for a in soup.find_all('a', href=True):
+        novo = urljoin(base_url, a['href'])
+        if novo != a['href']:
+            a['href'] = novo
+            changed = True
+    return changed
+
+
+def absolutize_html(html, base_url=BASE_URL):
+    """Mesma ideia de absolutize_urls, porém sobre uma string HTML.
+
+    Devolve (html_corrigido, alterou).
+    """
+    if not html:
+        return html, False
+    soup = BeautifulSoup(html, 'html.parser')
+    changed = absolutize_urls(soup, base_url)
+    return (str(soup) if changed else html), changed
+
+
 def fetch_archive_entries():
     """Retorna a lista de posts do arquivo: [{url, title, published_at}]."""
     resp = requests.get(ARCHIVE_URL, headers=HEADERS, timeout=20)
@@ -72,11 +105,7 @@ def fetch_post_content(url, logger=None):
     if not body:
         return "", ""
 
-    # Torna URLs relativas (imagens e links) absolutas
-    for img in body.find_all('img', src=True):
-        img['src'] = urljoin(BASE_URL, img['src'])
-    for a in body.find_all('a', href=True):
-        a['href'] = urljoin(BASE_URL, a['href'])
+    absolutize_urls(body, base_url=url)
 
     content = str(body)
     text = body.get_text(' ', strip=True)

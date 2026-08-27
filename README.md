@@ -78,7 +78,9 @@ Acesse **http://127.0.0.1:8000** e faça login.
 ## Primeiro uso
 
 1. Faça login com o usuário criado.
-2. Os posts recentes são sincronizados sozinhos ao abrir a home.
+2. Os posts recentes são sincronizados sozinhos ao abrir a home. A sincronização já busca o
+   conteúdo completo do post e grava as imagens com URL absoluta, então elas aparecem sem
+   nenhum comando extra.
 3. Para trazer **todos** os posts antigos: entre no admin (`/admin/`), vá em **Posts** e clique em
    **"Importar arquivo completo (AkitaOnRails)"**. A importação roda em segundo plano.
 4. Para destacar posts, marque o campo **destaque** deles no admin.
